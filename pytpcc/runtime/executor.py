@@ -32,7 +32,6 @@
 import sys
 import multiprocessing
 import time
-import random
 import traceback
 import logging
 from datetime import datetime

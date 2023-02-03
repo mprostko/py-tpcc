@@ -29,10 +29,15 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 # -----------------------------------------------------------------------
 
-import random
 from . import nurand
+from numba import njit
+from numba import prange
+import numpy as np
+import string
 
 SYLLABLES = [ "BAR", "OUGHT", "ABLE", "PRI", "PRES", "ESE", "ANTI", "CALLY", "ATION", "EING" ]
+LOWERCASE_ALPHABET = np.array(list(string.ascii_lowercase))
+DIGITS = np.array(list(string.digits))
 
 nurandVar = None # NURand
 def setNURand(nu):
@@ -59,12 +64,17 @@ def NURand(a, x, y):
     return (((number(0, a) | number(x, y)) + c) % (y - x + 1)) + x
 ## DEF
 
+@njit
 def number(minimum, maximum):
-    value = random.randint(minimum, maximum)
+    assert minimum <= maximum
+    if minimum == maximum:
+        return minimum
+    value = np.random.randint(minimum, maximum + 1)
     assert minimum <= value and value <= maximum
     return value
 ## DEF
 
+@njit
 def numberExcluding(minimum, maximum, excluding):
     """An in the range [minimum, maximum], excluding excluding."""
     assert minimum < maximum
@@ -79,6 +89,7 @@ def numberExcluding(minimum, maximum, excluding):
     return num
 ## DEF
 
+@njit
 def fixedPoint(decimal_places, minimum, maximum):
     assert decimal_places > 0
     assert minimum < maximum
@@ -106,23 +117,27 @@ def selectUniqueIds(numUnique, minimum, maximum):
     return rows
 ## DEF
 
+@njit
 def astring(minimum_length, maximum_length):
     """A random alphabetic string with length in range [minimum_length, maximum_length]."""
-    return randomString(minimum_length, maximum_length, 'a', 26)
+    return ''.join(np.random.choice(LOWERCASE_ALPHABET, size=number(minimum_length, maximum_length)))
 ## DEF
 
+@njit
+def astrings(minimum_length, maximum_length):
+    """1D array of random alphabetic strings, their lengths in ranges [[minimum_length], [maximum_length]]."""
+    assert len(minimum_length) == len(maximum_length)
+    random_strings = [ ]
+    for i in range(len(minimum_length)):
+        random_strings.append(astring(minimum_length[i], maximum_length[i]))
+    assert len(random_strings) == len(minimum_length)
+    return random_strings
+## DEF
+
+@njit
 def nstring(minimum_length, maximum_length):
     """A random numeric string with length in range [minimum_length, maximum_length]."""
-    return randomString(minimum_length, maximum_length, '0', 10)
-## DEF
-
-def randomString(minimum_length, maximum_length, base, numCharacters):
-    length = number(minimum_length, maximum_length)
-    baseByte = ord(base)
-    string = ""
-    for i in range(length):
-        string += chr(baseByte + number(0, numCharacters-1))
-    return string
+    return ''.join(np.random.choice(DIGITS, size=number(minimum_length, maximum_length)))
 ## DEF
 
 def makeLastName(number):
@@ -138,4 +153,8 @@ def makeRandomLastName(maxCID):
     min_cid = 999
     if (maxCID - 1) < min_cid: min_cid = maxCID - 1
     return makeLastName(NURand(255, 0, min_cid))
+## DEF
+
+def shuffle(arg):
+    np.random.shuffle(arg)
 ## DEF

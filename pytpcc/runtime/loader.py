@@ -34,7 +34,7 @@ import sys
 
 import logging
 from datetime import datetime
-from random import shuffle
+import numpy as np
 from pprint import pprint,pformat
 
 import constants
@@ -127,7 +127,7 @@ class Loader:
             ## FOR
             assert cIdPermutation[0] == 1
             assert cIdPermutation[self.scaleParameters.customersPerDistrict - 1] == self.scaleParameters.customersPerDistrict
-            shuffle(cIdPermutation)
+            rand.shuffle(cIdPermutation)
 
             o_tuples = [ ]
             ol_tuples = [ ]
@@ -182,9 +182,8 @@ class Loader:
     def generateItem(self, id, original):
         i_id = id
         i_im_id = rand.number(constants.MIN_IM, constants.MAX_IM)
-        i_name = rand.astring(constants.MIN_I_NAME, constants.MAX_I_NAME)
         i_price = rand.fixedPoint(constants.MONEY_DECIMALS, constants.MIN_PRICE, constants.MAX_PRICE)
-        i_data = rand.astring(constants.MIN_I_DATA, constants.MAX_I_DATA)
+        i_name, i_data = rand.astrings(np.array([constants.MIN_I_NAME, constants.MIN_I_DATA]), np.array([constants.MAX_I_NAME, constants.MAX_I_DATA]))
         if original: i_data = self.fillOriginal(i_data)
 
         return [i_id, i_im_id, i_name, i_price, i_data]
@@ -214,7 +213,6 @@ class Loader:
     ## generateCustomer
     ## ==============================================
     def generateCustomer(self, c_w_id, c_d_id, c_id, badCredit, doesReplicateName):
-        c_first = rand.astring(constants.MIN_FIRST, constants.MAX_FIRST)
         c_middle = constants.MIDDLE
 
         assert 1 <= c_id and c_id <= constants.CUSTOMERS_PER_DISTRICT
@@ -232,12 +230,11 @@ class Loader:
         c_ytd_payment = constants.INITIAL_YTD_PAYMENT
         c_payment_cnt = constants.INITIAL_PAYMENT_CNT
         c_delivery_cnt = constants.INITIAL_DELIVERY_CNT
-        c_data = rand.astring(constants.MIN_C_DATA, constants.MAX_C_DATA)
 
-        c_street1 = rand.astring(constants.MIN_STREET, constants.MAX_STREET)
-        c_street2 = rand.astring(constants.MIN_STREET, constants.MAX_STREET)
-        c_city = rand.astring(constants.MIN_CITY, constants.MAX_CITY)
-        c_state = rand.astring(constants.STATE, constants.STATE)
+        c_first, c_data, c_street1, c_street2, c_city, c_state = rand.astrings( \
+        np.array([constants.MIN_FIRST, constants.MIN_C_DATA, constants.MIN_STREET, constants.MIN_STREET, constants.MIN_CITY, constants.STATE]), \
+        np.array([constants.MAX_FIRST, constants.MAX_C_DATA, constants.MAX_STREET, constants.MAX_STREET, constants.MAX_CITY, constants.STATE]))
+
         c_zip = self.generateZip()
 
         return [ c_id, c_d_id, c_w_id, c_first, c_middle, c_last, \
@@ -285,17 +282,16 @@ class Loader:
     ## generateStock
     ## ==============================================
     def generateStock(self, s_w_id, s_i_id, original):
-        s_quantity = rand.number(constants.MIN_QUANTITY, constants.MAX_QUANTITY);
-        s_ytd = 0;
-        s_order_cnt = 0;
-        s_remote_cnt = 0;
+        s_quantity = rand.number(constants.MIN_QUANTITY, constants.MAX_QUANTITY)
+        s_ytd = 0
+        s_order_cnt = 0
+        s_remote_cnt = 0
 
         s_data = rand.astring(constants.MIN_I_DATA, constants.MAX_I_DATA);
         if original: self.fillOriginal(s_data)
 
-        s_dists = [ ]
-        for i in range(0, constants.DISTRICTS_PER_WAREHOUSE):
-            s_dists.append(rand.astring(constants.DIST, constants.DIST))
+        s_dists = rand.astrings(np.full(constants.DISTRICTS_PER_WAREHOUSE, constants.DIST), \
+                                np.full(constants.DISTRICTS_PER_WAREHOUSE, constants.DIST))
 
         return [ s_i_id, s_w_id, s_quantity ] + \
                s_dists + \
@@ -334,10 +330,9 @@ class Loader:
             Returns a list for a street address
             Used for warehouses, districts and customers.
         """
-        street1 = rand.astring(constants.MIN_STREET, constants.MAX_STREET)
-        street2 = rand.astring(constants.MIN_STREET, constants.MAX_STREET)
-        city = rand.astring(constants.MIN_CITY, constants.MAX_CITY)
-        state = rand.astring(constants.STATE, constants.STATE)
+        street1, street2, city, state = rand.astrings(np.array([constants.MIN_STREET, constants.MIN_STREET, constants.MIN_CITY, constants.STATE]), \
+                                                      np.array([constants.MAX_STREET, constants.MAX_STREET, constants.MAX_CITY, constants.STATE]))
+
         zip = self.generateZip()
 
         return [ street1, street2, city, state, zip ]
