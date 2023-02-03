@@ -29,31 +29,44 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 # -----------------------------------------------------------------------
 
-import random
+from numba import njit
+from numba import int8, int16
+from numba.experimental import jitclass
+import numpy as np
 
+@njit
 def makeForLoad():
     """Create random NURand constants, appropriate for loading the database."""
-    cLast = random.randint(0, 255)
-    cId = random.randint(0, 1023)
-    orderLineItemId = random.randint(0, 8191)
+    cLast = np.random.randint(0, 256)
+    cId = np.random.randint(0, 1024)
+    orderLineItemId = np.random.randint(0, 8192)
     return NURandC(cLast, cId, orderLineItemId)
 
+@njit
 def validCRun(cRun, cLoad):
     """Returns true if the cRun value is valid for running. See TPC-C 2.1.6.1 (page 20)"""
     cDelta = abs(cRun - cLoad)
     return 65 <= cDelta and cDelta <= 119 and cDelta != 96 and cDelta != 112
 
+@njit
 def makeForRun(loadC):
     """Create random NURand constants for running TPC-C. TPC-C 2.1.6.1. (page 20) specifies the valid range for these constants."""
-    cRun = random.randint(0, 255)
+    cRun = np.random.randint(0, 256)
     while validCRun(cRun, loadC.cLast) == False:
-        cRun = random.randint(0, 255)
+        cRun = np.random.randint(0, 256)
     assert validCRun(cRun, loadC.cLast)
 
-    cId = random.randint(0, 1023)
-    orderLineItemId = random.randint(0, 8191)
+    cId = np.random.randint(0, 1024)
+    orderLineItemId = np.random.randint(0, 8192)
     return NURandC(cRun, cId, orderLineItemId)
 
+spec = [
+    ('cLast', int16),
+    ('cId', int16),
+    ('orderLineItemId', int16)
+]
+
+@jitclass(spec)
 class NURandC:
     def __init__(self, cLast, cId, orderLineItemId):
         self.cLast = cLast
